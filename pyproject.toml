@@ -19,6 +19,8 @@ pre-commit = "^3.7.1"
 ruff = "^0.5.4"
 isort = "^5.13.2"
 pydantic-settings = "^2.3.4"
+pyjwt = "^2.8.0"
+python-dotenv = "^1.0.1"
 
 
 [build-system]
