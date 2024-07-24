@@ -7,11 +7,16 @@ license = "MIT"
 readme = "README.md"
 package-mode = false
 
+[tool.isort]
+line_length = 88
+profile = "black"
+remove_redundant_aliases = true
+
 [tool.poetry.dependencies]
 python = "^3.10"
 fastapi = {extras = ["all"], version = "^0.111.1"}
 uvicorn = "^0.30.3"
-python-socketio = "^5.11.3"
+python-socketio = {extras = ["asyncio"], version = "^5.11.3"}
 pymongo = "^4.8.0"
 python-jose = {extras = ["cryptography"], version = "^3.3.0"}
 passlib = {extras = ["bcrypt"], version = "^1.7.4"}
@@ -21,6 +26,8 @@ isort = "^5.13.2"
 pydantic-settings = "^2.3.4"
 pyjwt = "^2.8.0"
 python-dotenv = "^1.0.1"
+motor = "^3.5.1"
+mypy = "^1.11.0"
 
 
 [build-system]
