@@ -4,13 +4,26 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from chatApp.config.config import get_settings
-from chatApp.config.database import close_mongodb_connection, connect_to_mongodb
+from chatApp.config.database import mongo_db
 from chatApp.routes import auth, chat, user
 
 # Fetch settings
 settings = get_settings()
 
-app = FastAPI()
+
+# Define lifespan event handlers
+async def lifespan(app: FastAPI):
+    # On startup
+    await mongo_db.connect_to_mongodb()  # Use mongo_db instance
+
+    yield
+
+    # On shutdown
+    await mongo_db.close_mongodb_connection()  # Use mongo_db instance
+
+
+# Create a FastAPI app instance with lifespan events
+app = FastAPI(lifespan=lifespan)  # Pass lifespan as a parameter
 
 # Configure CORS using settings
 app.add_middleware(
@@ -33,20 +46,10 @@ async def root():
     return {"message": "Welcome to the FastAPI Chat App"}
 
 
-# Define lifespan event handlers
-async def lifespan(app: FastAPI):
-    # On startup
-    await connect_to_mongodb()
-
-    yield
-
-    # On shutdown
-    await close_mongodb_connection()
-
-
-app.include_router(auth.router)
-app.include_router(chat.router)
-app.include_router(user.router)
+# Include routers
+app.include_router(auth.router, prefix="/auth")
+app.include_router(chat.router, prefix="/chat")
+app.include_router(user.router, prefix="/user")
 
 
 @sio.event
