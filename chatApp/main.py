@@ -4,15 +4,26 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from chatApp.config.config import get_settings
-from chatApp.config.database import close_mongodb_connection, connect_to_mongodb
+from chatApp.config.database import mongo_db
 from chatApp.routes import auth, chat, user
 
 # Fetch settings
 settings = get_settings()
 
-app = FastAPI()
 
-# Configure CORS using settings
+# Define startup and shutdown event handlers
+async def startup_event():
+    await mongo_db.connect_to_mongodb()  # Use mongo_db instance
+
+
+async def shutdown_event():
+    await mongo_db.close_mongodb_connection()  # Use mongo_db instance
+
+
+# Create a FastAPI app instance
+app = FastAPI(on_startup=[startup_event], on_shutdown=[shutdown_event])
+
+# Configure CORS using settings with explicit type annotations
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_allow_origins,
@@ -29,33 +40,23 @@ socket_app = socketio.ASGIApp(sio, app)
 
 
 @app.get("/")
-async def root():
+async def root() -> dict[str, str]:
     return {"message": "Welcome to the FastAPI Chat App"}
 
 
-# Define lifespan event handlers
-async def lifespan(app: FastAPI):
-    # On startup
-    await connect_to_mongodb()
-
-    yield
-
-    # On shutdown
-    await close_mongodb_connection()
-
-
-app.include_router(auth.router)
-app.include_router(chat.router)
-app.include_router(user.router)
+# Include routers
+app.include_router(auth.router, prefix="/auth")
+app.include_router(chat.router, prefix="/chat")
+app.include_router(user.router, prefix="/user")
 
 
 @sio.event
-async def connect(sid, environ):
+async def connect(sid: str, environ: dict) -> None:
     print(f"Client connected: {sid}")
 
 
 @sio.event
-async def disconnect(sid):
+async def disconnect(sid: str) -> None:
     print(f"Client disconnected: {sid}")
 
 
