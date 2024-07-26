@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from chatApp.config.config import get_settings
 from chatApp.config.database import mongo_db
+from chatApp.middlewares.request_limit import RequestLimitMiddleware
 from chatApp.routes import auth, chat, user
 
 # Fetch settings
@@ -23,6 +24,7 @@ async def shutdown_event():
 # Create a FastAPI app instance
 app = FastAPI(on_startup=[startup_event], on_shutdown=[shutdown_event])
 
+### add middlewares ###
 # Configure CORS using settings with explicit type annotations
 app.add_middleware(
     CORSMiddleware,
@@ -32,8 +34,14 @@ app.add_middleware(
     allow_headers=settings.cors_allow_headers,
 )
 
+# add custom middlewares
+app.add_middleware(RequestLimitMiddleware, max_requests=10, window_seconds=1)
+
 # Create a Socket.IO server
-sio = socketio.AsyncServer(async_mode="asgi", cors_allowed_origins="*")
+sio = socketio.AsyncServer(
+    async_mode="asgi",
+    cors_allowed_origins=settings.cors_allow_origins,
+)
 
 # Wrap with ASGI application
 socket_app = socketio.ASGIApp(sio, app)

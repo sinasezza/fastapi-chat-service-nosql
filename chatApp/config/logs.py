@@ -36,8 +36,10 @@ except Exception as e:
     print(f"Error setting up logging: {e}")
     raise
 
+logging.getLogger("passlib").setLevel(logging.ERROR)
+
 # Get a logger instance
-logger: Logger = logging.getLogger(__name__)
+logger: Logger = logging.getLogger("ChatApp")
 
 # Example log message to test configuration
 logger.info("Logging configuration is set up.")

@@ -31,6 +31,7 @@ mypy = "^1.11.0"
 bcrypt = "^4.2.0"
 python-json-logger = "^2.0.7"
 motor-types = {extras = ["motor"], version = "^1.0.0b4"}
+pyupgrade = "^3.16.0"
 
 
 [build-system]
