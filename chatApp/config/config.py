@@ -29,6 +29,9 @@ class Settings(BaseSettings):
     cors_allow_methods: list[str] = Field(default=["*"])
     cors_allow_headers: list[str] = Field(default=["*"])
 
+    # Trusted hosts settings
+    trusted_hosts: list[str] = Field(default=["127.0.0.1", "localhost"])
+
     # logs settings
     log_level: str = Field(default="INFO")
     log_file_path: Path = Field(default=BASE_DIR / "logs/app.log")
