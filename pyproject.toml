@@ -8,7 +8,7 @@ readme = "README.md"
 package-mode = false
 
 [tool.isort]
-line_length = 88
+line_length = 92
 profile = "black"
 remove_redundant_aliases = true
 
@@ -35,6 +35,7 @@ pyupgrade = "^3.16.0"
 requests = "^2.32.3"
 pytest = "^8.3.2"
 pytest-asyncio = "^0.23.8"
+pydantic = "^2.8.2"
 
 
 [build-system]

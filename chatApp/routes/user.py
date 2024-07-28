@@ -4,20 +4,23 @@ from typing import Any
 from fastapi import APIRouter
 from motor.motor_asyncio import AsyncIOMotorCursor
 
-from chatApp.config.auth import get_users_collection
-from chatApp.schemas.user import users_serializer
+from chatApp.config.database import get_users_collection
+from chatApp.models.user import User
 
 router = APIRouter()
 
 
-@router.get("/")
-async def get_users() -> list[Mapping[str, Any]]:
+@router.get("/", response_model=list[User])
+async def get_users() -> list[User]:
     users_collection = get_users_collection()
+
     # Perform the query to get an async cursor
     cursor: AsyncIOMotorCursor = users_collection.find()
-    # Collect all users into a list
-    users: list[Mapping[str, Any]] = await cursor.to_list(
-        length=None
-    )  # length=None will retrieve all documents
-    # Serialize the list of users
-    return users_serializer(users)
+
+    # Collect all users into a list of dictionaries
+    users_dicts: list[Mapping[str, Any]] = await cursor.to_list(length=None)
+
+    # Convert each dictionary to a User object
+    users: list[User] = [User(**user_dict) for user_dict in users_dicts]
+
+    return users
