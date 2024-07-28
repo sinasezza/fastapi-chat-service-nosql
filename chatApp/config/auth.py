@@ -1,7 +1,6 @@
-# auth.py
 from collections.abc import Mapping
 from datetime import UTC, datetime, timedelta
-from typing import Any, Optional
+from typing import Any
 
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
@@ -10,9 +9,9 @@ from motor.motor_asyncio import AsyncIOMotorCollection
 from passlib.context import CryptContext
 
 from chatApp.config.config import get_settings
-from chatApp.config.database import mongo_db
+from chatApp.config.database import get_users_collection
 from chatApp.config.logs import logger
-from chatApp.models.user import User
+from chatApp.models.user import UserInDB
 from chatApp.utils.exceptions import credentials_exception
 
 settings = get_settings()
@@ -51,7 +50,7 @@ def get_password_hash(password: str) -> str:
 
 
 def create_access_token(
-    data: dict[str, Any], expires_delta: Optional[timedelta] = None
+    data: dict[str, Any], expires_delta: timedelta | None = None
 ) -> str:
     """
     Create a JWT access token with a specified expiration.
@@ -87,20 +86,7 @@ def parse_access_token(token: str) -> dict[str, Any]:
         raise credentials_exception
 
 
-def get_users_collection() -> AsyncIOMotorCollection:
-    """
-    Retrieve the users collection from the MongoDB database.
-
-    :return: The users collection instance.
-    :raises RuntimeError: If the users collection is not initialized.
-    """
-    users_collection = mongo_db.users_collection
-    if users_collection is None:
-        raise RuntimeError("Users collection is not initialized.")
-    return users_collection
-
-
-async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
+async def get_current_user(token: str = Depends(oauth2_scheme)) -> UserInDB:
     """
     Retrieve the current user from the database using the provided JWT token.
 
@@ -110,17 +96,17 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
     """
     # Parse the token to get the payload
     payload = parse_access_token(token)
-    username: Optional[str] = payload.get("sub")
+    username: str | None = payload.get("sub")
 
     if username is None:
         logger.error("Username is missing in the token payload.")
         raise credentials_exception
 
     # Fetch the users_collection within the request scope
-    users_collection = get_users_collection()
+    users_collection: AsyncIOMotorCollection = get_users_collection()
 
     # Properly type the result of the find_one query
-    user: Optional[Mapping[str, Any]] = await users_collection.find_one(
+    user: Mapping[str, Any] | None = await users_collection.find_one(
         {"username": username}
     )
 
@@ -130,15 +116,15 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
         raise credentials_exception
 
     # Construct and return a User instance from the found document
-    return User(**user)
+    return UserInDB(**user)
 
 
-async def authenticate_user(username: str, password: str) -> Optional[User]:
+async def authenticate_user(username: str, password: str) -> UserInDB | None:
     # Fetch the users_collection within the request scope
-    users_collection = get_users_collection()
+    users_collection: AsyncIOMotorCollection = get_users_collection()
 
     # Properly type the result of the find_one query
-    user: Optional[Mapping[str, Any]] = await users_collection.find_one(
+    user: Mapping[str, Any] | None = await users_collection.find_one(
         {"username": username}
     )
 
@@ -147,4 +133,4 @@ async def authenticate_user(username: str, password: str) -> Optional[User]:
         return None
 
     # Construct and return a User instance from the found document
-    return User(**user)
+    return UserInDB(**user)

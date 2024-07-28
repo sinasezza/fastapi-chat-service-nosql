@@ -1,13 +1,14 @@
 # auth.py
 from collections.abc import Mapping
 from datetime import timedelta
-from typing import Any, Optional
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 
 from chatApp.config import auth
-from chatApp.models.user import User
+from chatApp.config.database import get_users_collection
+from chatApp.models.user import User, UserInDB
 from chatApp.schemas.user import UserCreateSchema
 from chatApp.utils.exceptions import credentials_exception
 
@@ -15,12 +16,12 @@ router = APIRouter()
 
 
 @router.post("/register", response_model=User)
-async def register_user(user: UserCreateSchema) -> User:
+async def register_user(user: UserCreateSchema) -> UserInDB:
     # Fetch the users_collection within the request scope
-    users_collection = auth.get_users_collection()
+    users_collection = get_users_collection()
 
     # Check if the user already exists
-    existing_user: Optional[Mapping[str, Any]] = await users_collection.find_one(
+    existing_user: Mapping[str, Any] | None = await users_collection.find_one(
         {"username": user.username}
     )
     if existing_user:
@@ -38,7 +39,7 @@ async def register_user(user: UserCreateSchema) -> User:
     await users_collection.insert_one(user_dict)
 
     # Construct and return a User instance from the inserted document
-    return User(**user_dict)
+    return UserInDB(**user_dict)
 
 
 @router.post("/token", response_model=dict)
@@ -63,5 +64,7 @@ async def login_for_access_token(
 
 
 @router.get("/users/me/", response_model=User)
-async def read_users_me(current_user: User = Depends(auth.get_current_user)) -> User:
+async def read_users_me(
+    current_user: UserInDB = Depends(auth.get_current_user),
+) -> UserInDB:
     return current_user

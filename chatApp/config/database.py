@@ -1,5 +1,4 @@
 import logging
-from typing import Optional
 
 from motor.motor_asyncio import (
     AsyncIOMotorClient,
@@ -15,11 +14,11 @@ settings = get_settings()
 
 class MongoDB:
     def __init__(self) -> None:
-        self.db_client: Optional[AsyncIOMotorClient] = None
-        self.db: Optional[AsyncIOMotorDatabase] = None
-        self.users_collection: Optional[AsyncIOMotorCollection] = None
-        self.messages_collection: Optional[AsyncIOMotorCollection] = None
-        self.rooms_collection: Optional[AsyncIOMotorCollection] = None
+        self.db_client: AsyncIOMotorClient | None = None
+        self.db: AsyncIOMotorDatabase | None = None
+        self.users_collection: AsyncIOMotorCollection | None = None
+        self.messages_collection: AsyncIOMotorCollection | None = None
+        self.rooms_collection: AsyncIOMotorCollection | None = None
 
     async def connect_to_mongodb(self) -> None:
         try:
@@ -53,3 +52,42 @@ class MongoDB:
 
 # Create a global instance of MongoDB
 mongo_db = MongoDB()
+
+
+def get_users_collection() -> AsyncIOMotorCollection:
+    """
+    Retrieve the users collection from the MongoDB database.
+
+    :return: The users collection instance.
+    :raises RuntimeError: If the users collection is not initialized.
+    """
+    users_collection = mongo_db.users_collection
+    if users_collection is None:
+        raise RuntimeError("Users collection is not initialized.")
+    return users_collection
+
+
+def get_messages_collection() -> AsyncIOMotorCollection:
+    """
+    Retrieve the messages collection from the MongoDB database.
+
+    :return: The messages collection instance.
+    :raises RuntimeError: If the messages collection is not initialized.
+    """
+    messages_collection = mongo_db.messages_collection
+    if messages_collection is None:
+        raise RuntimeError("messages collection is not initialized.")
+    return messages_collection
+
+
+def get_rooms_collection() -> AsyncIOMotorCollection:
+    """
+    Retrieve the rooms collection from the MongoDB database.
+
+    :return: The rooms collection instance.
+    :raises RuntimeError: If the rooms collection is not initialized.
+    """
+    rooms_collection = mongo_db.rooms_collection
+    if rooms_collection is None:
+        raise RuntimeError("rooms collection is not initialized.")
+    return rooms_collection
