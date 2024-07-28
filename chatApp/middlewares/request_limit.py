@@ -54,7 +54,7 @@ class RequestLimitMiddleware(BaseHTTPMiddleware):
         process_time = time.time() - start_time
 
         # Log the request processing time
-        logger.info(f"Processed request from {client_ip} in {process_time:.2f} seconds")
+        logger.info(f"Processed request from {client_ip} in {process_time:.4f} seconds")
 
         # Add X-Process-Time header to the response
         response.headers["X-Process-Time"] = str(process_time)

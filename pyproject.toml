@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "fastapi-chat-service-nosql"
-version = "0.1.0"
+version = "1.0.0"
 description = "this is a chat service implemented using Fast API Framework."
 authors = ["sinasezza <s.e.sezza121@gmail.com>"]
 license = "MIT"
@@ -16,7 +16,7 @@ remove_redundant_aliases = true
 python = "^3.10"
 fastapi = {extras = ["all"], version = "^0.111.1"}
 uvicorn = "^0.30.3"
-python-socketio = {extras = ["asyncio"], version = "^5.11.3"}
+python-socketio = {extras = ["asyncio-client"], version = "^5.11.3"}
 pymongo = "^4.8.0"
 python-jose = {extras = ["cryptography"], version = "^3.3.0"}
 passlib = {extras = ["bcrypt"], version = "^1.7.4"}
@@ -32,6 +32,9 @@ bcrypt = "^4.2.0"
 python-json-logger = "^2.0.7"
 motor-types = {extras = ["motor"], version = "^1.0.0b4"}
 pyupgrade = "^3.16.0"
+requests = "^2.32.3"
+pytest = "^8.3.2"
+pytest-asyncio = "^0.23.8"
 
 
 [build-system]
