@@ -8,9 +8,12 @@ readme = "README.md"
 package-mode = false
 
 [tool.isort]
-line_length = 92
+line_length = 79
 profile = "black"
 remove_redundant_aliases = true
+
+[tool.ruff]
+line-length = 79
 
 [tool.poetry.dependencies]
 python = "^3.10"

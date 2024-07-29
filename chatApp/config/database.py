@@ -35,7 +35,12 @@ class MongoDB:
             # Initialize collections
             self.users_collection = self.db.get_collection("users")
             self.messages_collection = self.db.get_collection("messages")
-            self.rooms_collection = self.db.get_collection("rooms")
+            self.public_rooms_collection = self.db.get_collection(
+                "public_rooms"
+            )
+            self.private_rooms_collection = self.db.get_collection(
+                "private_rooms"
+            )
 
             # Ping the server to validate the connection
             await self.db_client.admin.command("ismaster")
@@ -80,14 +85,27 @@ def get_messages_collection() -> AsyncIOMotorCollection:
     return messages_collection
 
 
-def get_rooms_collection() -> AsyncIOMotorCollection:
+def get_public_rooms_collection() -> AsyncIOMotorCollection:
     """
-    Retrieve the rooms collection from the MongoDB database.
+    Retrieve the public rooms collection from the MongoDB database.
 
     :return: The rooms collection instance.
     :raises RuntimeError: If the rooms collection is not initialized.
     """
-    rooms_collection = mongo_db.rooms_collection
+    rooms_collection = mongo_db.public_rooms_collection
     if rooms_collection is None:
-        raise RuntimeError("rooms collection is not initialized.")
+        raise RuntimeError("public rooms collection is not initialized.")
+    return rooms_collection
+
+
+def get_private_rooms_collection() -> AsyncIOMotorCollection:
+    """
+    Retrieve the private rooms collection from the MongoDB database.
+
+    :return: The rooms collection instance.
+    :raises RuntimeError: If the rooms collection is not initialized.
+    """
+    rooms_collection = mongo_db.private_rooms_collection
+    if rooms_collection is None:
+        raise RuntimeError("private rooms collection is not initialized.")
     return rooms_collection

@@ -1,6 +1,5 @@
-# auth.py
 from collections.abc import Mapping
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -34,6 +33,8 @@ async def register_user(user: UserCreateSchema) -> UserInDB:
     hashed_password = auth.get_password_hash(user.password)
     user_dict = user.model_dump(exclude={"password"})
     user_dict["hashed_password"] = hashed_password
+
+    user_dict["created_at"] = datetime.now()
 
     # Insert user into the database
     await users_collection.insert_one(user_dict)
