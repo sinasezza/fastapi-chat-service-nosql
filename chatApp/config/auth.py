@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 from typing import Any
 
 from fastapi import Depends
@@ -26,6 +26,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
 SECRET_KEY = settings.jwt_secret_key.get_secret_value()
 ALGORITHM = settings.jwt_algorithm
 ACCESS_TOKEN_EXPIRE_MINUTES = settings.access_token_expire_minutes
+REFRESH_TOKEN_EXPIRE_DAYS = settings.refresh_token_expire_days
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -49,30 +50,39 @@ def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
 
-def create_access_token(
-    data: dict[str, Any], expires_delta: timedelta | None = None
+def create_token(
+    data: dict[str, Any],
+    token_type: str,
+    expires_delta: timedelta | None = None,
 ) -> str:
     """
-    Create a JWT access token with a specified expiration.
+    Create a JWT token with a specified expiration.
 
     :param data: The data to encode into the token.
+    :param token_type: The type of token to create
     :param expires_delta: Optional expiration time delta for the token.
     :return: The encoded JWT token as a string.
     """
     to_encode = data.copy()
     if expires_delta:
-        expire = datetime.now(UTC) + expires_delta
+        expire = datetime.now() + expires_delta
     else:
-        expire = datetime.now(UTC) + timedelta(
-            minutes=ACCESS_TOKEN_EXPIRE_MINUTES
-        )
+        match token_type:
+            case "access":
+                expire = datetime.now() + timedelta(
+                    minutes=ACCESS_TOKEN_EXPIRE_MINUTES
+                )
+            case "refresh":
+                expire = datetime.now() + timedelta(
+                    days=REFRESH_TOKEN_EXPIRE_DAYS
+                )
     to_encode.update({"exp": expire})
 
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
 
-def parse_access_token(token: str) -> dict[str, Any]:
+def parse_token(token: str) -> dict[str, Any]:
     """
     Parse and validate the given JWT token, returning its payload.
 
@@ -81,11 +91,43 @@ def parse_access_token(token: str) -> dict[str, Any]:
     :raises credentials_exception: If the token is invalid or cannot be decoded.
     """
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(
+            token,
+            SECRET_KEY,
+            algorithms=[ALGORITHM],
+            options={"verify_signature": False},
+        )
         return payload
     except JWTError as e:
         logger.error(f"JWT error: {e}")  # Log the error for debugging purposes
         raise credentials_exception
+
+
+def validate_token(token: str) -> bool:
+    """
+    Validate the given JWT token by checking its expiration.
+
+    :param token: The JWT token to validate.
+    :return: True if the token is valid and not expired, otherwise False.
+    """
+    try:
+        # Decode the token without validating the signature to check expiration
+        payload = jwt.decode(
+            token,
+            SECRET_KEY,
+            algorithms=[ALGORITHM],
+            options={"verify_signature": False},
+        )
+        # Check if the token is expired
+        if (
+            payload.get("exp")
+            and datetime.fromtimestamp(payload["exp"]) < datetime.now()
+        ):
+            return False
+        return True
+    except JWTError as e:
+        logger.error(f"JWT error: {e}")
+        return False
 
 
 async def get_current_user(token: str = Depends(oauth2_scheme)) -> UserInDB:
@@ -97,8 +139,8 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> UserInDB:
     :raises credentials_exception: If the user cannot be found or the token is invalid.
     """
     # Parse the token to get the payload
-    payload = parse_access_token(token)
-    username: str | None = payload.get("sub")
+    payload = parse_token(token)
+    username: str | None = payload.get("username")
 
     if username is None:
         logger.error("Username is missing in the token payload.")

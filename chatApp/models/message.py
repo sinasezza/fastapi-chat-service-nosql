@@ -7,7 +7,7 @@ from chatApp.utils.object_id import PydanticObjectId
 
 class Message(BaseModel):
     user_id: PydanticObjectId
-    room_id: str | None = Field(default=None)
+    room_id: PydanticObjectId
     content: str = Field(default=None)
     media: str = Field(default=None)
     created_at: datetime = Field(default_factory=lambda: datetime.now())

@@ -7,7 +7,13 @@ from fastapi.security import OAuth2PasswordRequestForm
 
 from chatApp.config import auth
 from chatApp.config.database import get_users_collection
-from chatApp.models.user import User, UserInDB
+from chatApp.models.user import (
+    User,
+    UserInDB,
+    fetch_user_by_email,
+    fetch_user_by_id,
+    fetch_user_by_username,
+)
 from chatApp.schemas.user import UserCreateSchema
 from chatApp.utils.exceptions import credentials_exception
 
@@ -16,52 +22,114 @@ router = APIRouter()
 
 @router.post("/register", response_model=User)
 async def register_user(user: UserCreateSchema) -> UserInDB:
-    # Fetch the users_collection within the request scope
     users_collection = get_users_collection()
 
-    # Check if the user already exists
-    existing_user: Mapping[str, Any] | None = await users_collection.find_one(
-        {"username": user.username}
-    )
+    existing_user = await fetch_user_by_username(user.username)
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Username already registered",
         )
+    existing_user = await fetch_user_by_email(user.email)
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already registered",
+        )
 
-    # Hash the password before saving
     hashed_password = auth.get_password_hash(user.password)
     user_dict = user.model_dump(exclude={"password"})
     user_dict["hashed_password"] = hashed_password
-
     user_dict["created_at"] = datetime.now()
 
-    # Insert user into the database
-    await users_collection.insert_one(user_dict)
+    the_user = User(**user_dict)
 
-    # Construct and return a User instance from the inserted document
-    return UserInDB(**user_dict)
+    result = await users_collection.insert_one(
+        the_user.model_dump(by_alias=True)
+    )
+
+    return UserInDB(
+        **the_user.model_dump(by_alias=True), _id=result.inserted_id
+    )
 
 
 @router.post("/token", response_model=dict)
 async def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
 ) -> dict[str, str]:
-    # Attempt to authenticate the user using provided credentials
     user = await auth.authenticate_user(form_data.username, form_data.password)
-
-    # Raise an exception if authentication fails
     if not user:
         raise credentials_exception
 
-    # Create an access token with a specific expiration time
     access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = auth.create_access_token(
-        data={"sub": user.username}, expires_delta=access_token_expires
+    refresh_token_expires = timedelta(days=auth.REFRESH_TOKEN_EXPIRE_DAYS)
+    data_to_encode = {
+        "username": user.username,
+        "email": user.email,
+        "id": str(user.id),
+    }
+
+    access_token = auth.create_token(
+        data=data_to_encode,
+        token_type="access",
+        expires_delta=access_token_expires,
     )
 
-    # Return the generated token and its type
-    return {"access_token": access_token, "token_type": "bearer"}
+    refresh_token = auth.create_token(
+        data=data_to_encode,
+        token_type="refresh",
+        expires_delta=refresh_token_expires,
+    )
+
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer",
+    }
+
+
+@router.post("/token/refresh", response_model=dict)
+async def refresh_token(token: str) -> dict[str, str]:
+    try:
+        payload: dict[str, Any] = auth.parse_token(token)
+        if not auth.validate_token(token):
+            raise credentials_exception
+
+        user_id: str = payload["id"]
+        user: Mapping[str, Any] | None = await fetch_user_by_id(user_id)
+        if user is None:
+            raise credentials_exception
+
+        access_token_expires = timedelta(
+            minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES
+        )
+        refresh_token_expires = timedelta(days=auth.REFRESH_TOKEN_EXPIRE_DAYS)
+        data_to_encode = {
+            "username": user["username"],
+            "email": user["email"],
+            "id": str(user["id"]),
+        }
+
+        new_access_token = auth.create_token(
+            data=data_to_encode,
+            token_type="access",
+            expires_delta=access_token_expires,
+        )
+
+        new_refresh_token = auth.create_token(
+            data=data_to_encode,
+            token_type="refresh",
+            expires_delta=refresh_token_expires,
+        )
+
+        return {
+            "access_token": new_access_token,
+            "refresh_token": new_refresh_token,
+            "token_type": "bearer",
+        }
+
+    except HTTPException:
+        raise credentials_exception
 
 
 @router.get("/users/me/", response_model=User)
