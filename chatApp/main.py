@@ -59,7 +59,7 @@ async def root() -> dict[str, str]:
 
 
 # Mount socket.io app
-app.mount("/", app=sio_app)
+app.mount("/socket.io/", app=sio_app)
 
 
 if __name__ == "__main__":

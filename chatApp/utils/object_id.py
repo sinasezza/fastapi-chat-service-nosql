@@ -21,10 +21,16 @@ class _ObjectIdPydanticAnnotation:
             [
                 # check if it's an instance first before doing any further work
                 core_schema.is_instance_schema(ObjectId),
-                core_schema.no_info_plain_validator_function(validate_from_str),
+                core_schema.no_info_plain_validator_function(
+                    validate_from_str
+                ),
             ],
             serialization=core_schema.to_string_ser_schema(),
         )
 
 
 PydanticObjectId = Annotated[ObjectId, _ObjectIdPydanticAnnotation]
+
+
+def is_valid_object_id(id_str: str) -> bool:
+    return ObjectId.is_valid(id_str)

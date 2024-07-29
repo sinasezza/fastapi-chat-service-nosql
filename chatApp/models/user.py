@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime
 
 from pydantic import BaseModel, Field
 
@@ -11,10 +11,10 @@ class User(BaseModel):
     hashed_password: str
     is_active: bool = True
     is_admin: bool = False
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now())
+    updated_at: datetime = Field(default_factory=lambda: datetime.now())
     last_login: datetime | None = None
 
 
 class UserInDB(User):
-    id: PydanticObjectId = Field(alias="_id")
+    id: PydanticObjectId = Field(alias="_id", serialization_alias="id")

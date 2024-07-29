@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime
 
 from pydantic import BaseModel, Field
 
@@ -10,8 +10,8 @@ class Message(BaseModel):
     room_id: str | None = Field(default=None)
     content: str = Field(default=None)
     media: str = Field(default=None)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now())
 
 
 class MessageInDB(Message):
-    id: PydanticObjectId = Field(alias="_id")
+    id: PydanticObjectId = Field(alias="_id", serialization_alias="id")

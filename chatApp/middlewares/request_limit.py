@@ -2,14 +2,19 @@ import time
 from collections import defaultdict
 
 from fastapi import Request, Response
-from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+from starlette.middleware.base import (
+    BaseHTTPMiddleware,
+    RequestResponseEndpoint,
+)
 from starlette.types import ASGIApp
 
 from chatApp.config.logs import logger  # Import your custom logger
 
 
 class RequestLimitMiddleware(BaseHTTPMiddleware):
-    def __init__(self, app: ASGIApp, max_requests: int = 4, window_seconds: int = 1):
+    def __init__(
+        self, app: ASGIApp, max_requests: int = 4, window_seconds: int = 1
+    ):
         super().__init__(app)
         self.max_requests = max_requests
         self.window_seconds = window_seconds
@@ -41,7 +46,9 @@ class RequestLimitMiddleware(BaseHTTPMiddleware):
 
         # If the count exceeds the limit, return a 429 Too Many Requests response
         if count > self.max_requests:
-            logger.warning(f"Too many requests from {client_ip} - Count: {count}")
+            logger.warning(
+                f"Too many requests from {client_ip} - Count: {count}"
+            )
             return Response("Too many requests", status_code=429)
 
         # Measure start time of request processing
@@ -54,7 +61,9 @@ class RequestLimitMiddleware(BaseHTTPMiddleware):
         process_time = time.time() - start_time
 
         # Log the request processing time
-        logger.info(f"Processed request from {client_ip} in {process_time:.4f} seconds")
+        logger.info(
+            f"Processed request from {client_ip} in {process_time:.4f} seconds"
+        )
 
         # Add X-Process-Time header to the response
         response.headers["X-Process-Time"] = str(process_time)

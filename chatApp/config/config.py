@@ -42,7 +42,9 @@ class Settings(BaseSettings):
     upload_dir: Path = Field(default=BASE_DIR / "uploads")
     max_upload_size: int = Field(default=(5 * 1024 * 1024))
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+    model_config = SettingsConfigDict(
+        env_file=".env", env_file_encoding="utf-8"
+    )
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

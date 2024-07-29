@@ -12,7 +12,9 @@ sio_server = socketio.AsyncServer(
 
 # Create the ASGI app using the defined server
 sio_app = socketio.ASGIApp(
-    socketio_server=sio_server, socketio_path="/", other_asgi_app="main:app"
+    socketio_server=sio_server,
+    socketio_path="/socket.io/",
+    other_asgi_app="main:app",
 )
 
 

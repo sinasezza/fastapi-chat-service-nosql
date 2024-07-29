@@ -32,7 +32,7 @@ async def test_connection():
     try:
         # Connect to the server
         await sio.connect(
-            "ws://127.0.0.1:8000/", wait_timeout=10
+            "ws://127.0.0.1:8000/socket.io/", wait_timeout=10
         )  # Ensure correct path
 
         # Wait for the connect event to be triggered
