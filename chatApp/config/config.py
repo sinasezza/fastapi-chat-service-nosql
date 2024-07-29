@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     jwt_secret_key: SecretStr = Field(default="your-secret-key")
     jwt_algorithm: str = Field(default="HS256")
     access_token_expire_minutes: int = Field(default=1440)
+    refresh_token_expire_days: int = Field(default=14)
 
     # CORS settings
     cors_allow_origins: list[str] = Field(default=["*"])
