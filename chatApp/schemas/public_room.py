@@ -1,4 +1,8 @@
+from datetime import datetime
+
 from pydantic import BaseModel, Field
+
+from chatApp.utils.object_id import PydanticObjectId
 
 
 class CreatePublicRoom(BaseModel):
@@ -20,3 +24,16 @@ class CreatePublicRoom(BaseModel):
     max_latest_messages_access: int | None = Field(
         None, description="Maximum number of latest messages to access"
     )
+
+
+class GetPulbicRoomsSchema(BaseModel):
+    id: PydanticObjectId = Field(
+        ...,
+        description="id of the room",
+        alias="_id",
+        serialization_alias="id",
+    )
+    owner: PydanticObjectId = Field(..., description="id of owner of the room")
+    name: str
+    description: str | None = None
+    created_at: datetime

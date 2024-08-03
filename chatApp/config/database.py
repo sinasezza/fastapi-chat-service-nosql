@@ -1,4 +1,5 @@
 import logging
+from functools import lru_cache
 
 from motor.motor_asyncio import (
     AsyncIOMotorClient,
@@ -59,6 +60,7 @@ class MongoDB:
 mongo_db = MongoDB()
 
 
+@lru_cache
 def get_users_collection() -> AsyncIOMotorCollection:
     """
     Retrieve the users collection from the MongoDB database.
@@ -72,6 +74,7 @@ def get_users_collection() -> AsyncIOMotorCollection:
     return users_collection
 
 
+@lru_cache
 def get_messages_collection() -> AsyncIOMotorCollection:
     """
     Retrieve the messages collection from the MongoDB database.
@@ -85,6 +88,7 @@ def get_messages_collection() -> AsyncIOMotorCollection:
     return messages_collection
 
 
+@lru_cache
 def get_public_rooms_collection() -> AsyncIOMotorCollection:
     """
     Retrieve the public rooms collection from the MongoDB database.
@@ -98,6 +102,7 @@ def get_public_rooms_collection() -> AsyncIOMotorCollection:
     return rooms_collection
 
 
+@lru_cache
 def get_private_rooms_collection() -> AsyncIOMotorCollection:
     """
     Retrieve the private rooms collection from the MongoDB database.
