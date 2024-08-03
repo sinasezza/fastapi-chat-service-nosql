@@ -48,9 +48,9 @@ app.add_middleware(
 )
 
 # Include your routers for API endpoints
-app.include_router(auth.router, prefix="/auth")
-app.include_router(chat.router, prefix="/chat")
-app.include_router(user.router, prefix="/user")
+app.include_router(auth.router, prefix="/auth", tags=["auth"])
+app.include_router(chat.router, prefix="/chat", tags=["chat"])
+app.include_router(user.router, prefix="/user", tags=["user"])
 
 
 @app.get("/")

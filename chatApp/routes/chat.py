@@ -16,7 +16,7 @@ from chatApp.models.private_room import PrivateRoom, PrivateRoomInDB
 from chatApp.models.public_room import PublicRoom, PublicRoomInDB
 from chatApp.models.user import UserInDB
 from chatApp.schemas.private_room import CreatePrivateRoom
-from chatApp.schemas.public_room import CreatePublicRoom
+from chatApp.schemas.public_room import CreatePublicRoom, GetPulbicRoomsSchema
 from chatApp.utils.object_id import PydanticObjectId, is_valid_object_id
 
 router = APIRouter()
@@ -73,6 +73,40 @@ async def join_public_room(
         )
 
     return PublicRoomInDB(**room)
+
+
+@router.get("/get-public-rooms/", response_model=Mapping[str, Any])
+async def get_public_rooms(
+    page: int = 1,
+    per_page: int = 10,
+):
+    rooms_collection: AsyncIOMotorCollection = get_public_rooms_collection()
+    total_count = await rooms_collection.count_documents({})
+    rooms = (
+        await rooms_collection.find(
+            {},
+            {
+                "_id": 1,
+                "name": 1,
+                "description": 1,
+                "owner": 1,
+                "created_at": 1,
+            },
+        )
+        .skip((page - 1) * per_page)
+        .limit(per_page)
+        .to_list(None)
+    )
+
+    data_to_return = {
+        "data": [GetPulbicRoomsSchema(**room) for room in rooms],
+        "meta": {
+            "total_count": total_count,
+            "page": page,
+            "per_page": per_page,
+        },
+    }
+    return data_to_return
 
 
 @router.post(

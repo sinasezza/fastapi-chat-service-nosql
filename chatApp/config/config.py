@@ -25,10 +25,10 @@ class Settings(BaseSettings):
     refresh_token_expire_days: int = Field(default=14)
 
     # CORS settings
-    cors_allow_origins: list[str] = Field(default=["*"])
+    cors_allow_origins: list[str] | str = Field(default=["*"])
     cors_allow_credentials: bool = Field(default=True)
-    cors_allow_methods: list[str] = Field(default=["*"])
-    cors_allow_headers: list[str] = Field(default=["*"])
+    cors_allow_methods: list[str] | str = Field(default=["*"])
+    cors_allow_headers: list[str] | str = Field(default=["*"])
 
     # Trusted hosts settings
     trusted_hosts: list[str] = Field(default=["127.0.0.1", "localhost"])
