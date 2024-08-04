@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 
 from chatApp.config.config import get_settings
-from chatApp.config.database import mongo_db
+from chatApp.config.database import init_mongo_db, shutdown_mongo_db
 from chatApp.middlewares.request_limit import RequestLimitMiddleware
 from chatApp.routes import auth, chat, user
 from chatApp.sockets import sio_app
@@ -13,26 +13,16 @@ from chatApp.sockets import sio_app
 settings = get_settings()
 
 
-# Define startup and shutdown event handlers
-async def startup_event():
-    await mongo_db.connect_to_mongodb()
-
-
-async def shutdown_event():
-    await mongo_db.close_mongodb_connection()
-
-
 # Create a FastAPI app instance
 app = FastAPI(
     title="FastAPI Chat App",
     description="A chat application built with FastAPI and socket.io",
     version="1.0.0",
-    on_startup=[startup_event],
-    on_shutdown=[shutdown_event],
+    on_startup=[init_mongo_db],
+    on_shutdown=[shutdown_mongo_db],
 )
 
 ### Add middlewares ###
-
 # Configure CORS using settings
 app.add_middleware(
     CORSMiddleware,

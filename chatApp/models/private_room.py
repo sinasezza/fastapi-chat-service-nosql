@@ -5,7 +5,6 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from chatApp.config.database import get_private_rooms_collection
-from chatApp.models.message import MessageInDB, get_private_messages
 from chatApp.utils.object_id import PydanticObjectId
 
 
@@ -71,10 +70,6 @@ async def get_user_private_rooms(user_id: str) -> list[PrivateRoomInDB]:
 
     # Convert each document to PrivateRoomInDB
     return [PrivateRoomInDB(**room) for room in rooms]
-
-
-async def get_private_room_messages(room_id: str) -> list[MessageInDB]:
-    return await get_private_messages(room_id)
 
 
 async def create_private_room(user1_id: str, user2_id: str) -> PrivateRoomInDB:
