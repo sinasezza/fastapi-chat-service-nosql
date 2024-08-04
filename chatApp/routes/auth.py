@@ -1,4 +1,3 @@
-from collections.abc import Mapping
 from datetime import datetime, timedelta
 from typing import Any
 
@@ -96,7 +95,7 @@ async def refresh_token(token: str) -> dict[str, str]:
             raise credentials_exception
 
         user_id: str = payload["id"]
-        user: Mapping[str, Any] | None = await fetch_user_by_id(user_id)
+        user: UserInDB | None = await fetch_user_by_id(user_id)
         if user is None:
             raise credentials_exception
 
@@ -105,9 +104,9 @@ async def refresh_token(token: str) -> dict[str, str]:
         )
         refresh_token_expires = timedelta(days=auth.REFRESH_TOKEN_EXPIRE_DAYS)
         data_to_encode = {
-            "username": user["username"],
-            "email": user["email"],
-            "id": str(user["id"]),
+            "username": user.username,
+            "email": user.email,
+            "id": str(user.id),
         }
 
         new_access_token = auth.create_token(
