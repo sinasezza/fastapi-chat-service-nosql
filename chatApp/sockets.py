@@ -5,15 +5,7 @@ import socketio
 from chatApp.config.config import get_settings
 from chatApp.config.database import get_messages_collection
 from chatApp.config.logs import get_logger
-from chatApp.models.message import Message
-from chatApp.models.private_room import (
-    check_members_in_room,
-    join_private_room,
-)
-from chatApp.models.public_room import (
-    fetch_public_room_by_id,
-    join_public_room,
-)
+from chatApp.models import message, private_room, public_room
 from chatApp.models.user import fetch_user_by_id
 from chatApp.utils.object_id import PydanticObjectId
 
@@ -72,7 +64,9 @@ async def joining_public_room(sid: str, data: dict[str, Any]) -> None:
         )
         return
 
-    room_joined: bool = await join_public_room(room_id, user_id)
+    room_joined, report, _ = await public_room.join_public_room(
+        room_id, user_id
+    )
 
     if room_joined:
         await sio_server.enter_room(sid, room_id)
@@ -91,17 +85,19 @@ async def joining_public_room(sid: str, data: dict[str, Any]) -> None:
 @sio_server.event
 async def joining_private_room(sid: str, data: dict[str, Any]) -> None:
     """Handle user joining a private room."""
-    user1 = data.get("user1")
-    user2 = data.get("user2")
+    # user1 = data.get("user1")
+    # user2 = data.get("user2")
 
-    if not isinstance(user1, str) or not isinstance(user2, str):
-        await sio_server.emit("error", data="Invalid user1 or user2", room=sid)
-        return
+    ...
 
-    room_id = await join_private_room(user1, user2)
-    await sio_server.enter_room(sid, room_id)
-    print(f"User {user1} joined private room {room_id} with {user2}")
-    await sio_server.emit("user_joined", data=user1, room=room_id)
+    # if not isinstance(user1, str) or not isinstance(user2, str):
+    #     await sio_server.emit("error", data="Invalid user1 or user2", room=sid)
+    #     return
+
+    # room_id = await private_room.join_private_room(user1, user2)
+    # await sio_server.enter_room(sid, room_id)
+    # print(f"User {user1} joined private room {room_id} with {user2}")
+    # await sio_server.emit("user_joined", data=user1, room=room_id)
 
 
 @sio_server.event
@@ -131,12 +127,12 @@ async def leave_room(sid: str, data: dict[str, Any]) -> None:
 async def send_public_message(sid: str, data: dict[str, Any]) -> None:
     """Handle sending a message to a public group."""
     room_id = data.get("room_id")
-    message = data.get("message")
+    message_sent = data.get("message")
     user_id = data.get("user_id")
 
     if (
         not isinstance(room_id, str)
-        or not isinstance(message, str)
+        or not isinstance(message_sent, str)
         or not isinstance(user_id, str)
     ):
         await sio_server.emit(
@@ -144,9 +140,11 @@ async def send_public_message(sid: str, data: dict[str, Any]) -> None:
         )
         return
 
-    print(f"Sending message to room {room_id}: {message} from user {user_id}")
+    print(
+        f"Sending message to room {room_id}: {message_sent} from user {user_id}"
+    )
 
-    room = await fetch_public_room_by_id(room_id)
+    room = await public_room.fetch_public_room_by_id(room_id)
 
     if not room:
         await sio_server.emit(
@@ -157,11 +155,11 @@ async def send_public_message(sid: str, data: dict[str, Any]) -> None:
     messages_collection = get_messages_collection()
     user = await fetch_user_by_id(user_id)
 
-    if user and user["_id"] in room["members"]:
-        new_message = Message(
+    if user and user["_id"] in room.members:
+        new_message = message.Message(
             user_id=PydanticObjectId(user_id),
             room_id=PydanticObjectId(room_id),
-            content=message,
+            content=message_sent,
             room_type="public",
         )
         await messages_collection.insert_one(new_message.model_dump())
@@ -181,13 +179,13 @@ async def send_private_message(sid: str, data: dict[str, Any]) -> None:
     room_id = data.get("room_id")
     user1_id = data.get("user1")
     user2_id = data.get("user2")
-    message = data.get("message")
+    message_sent = data.get("message")
 
     if (
         not isinstance(room_id, str)
         or not isinstance(user1_id, str)
         or not isinstance(user2_id, str)
-        or not isinstance(message, str)
+        or not isinstance(message_sent, str)
     ):
         await sio_server.emit(
             "error",
@@ -204,8 +202,10 @@ async def send_private_message(sid: str, data: dict[str, Any]) -> None:
         )
         return
 
-    room_id = await check_members_in_room(user1_id, user2_id)
-    if not room_id:
+    room: (
+        private_room.PrivateRoomInDB | None
+    ) = await private_room.fetch_private_room_by_members(user1_id, user2_id)
+    if not room:
         await sio_server.emit(
             "error", data={"error": "Room not found"}, room=sid
         )
@@ -213,10 +213,10 @@ async def send_private_message(sid: str, data: dict[str, Any]) -> None:
 
     messages_collection = get_messages_collection()
 
-    new_message = Message(
+    new_message = message.Message(
         user_id=PydanticObjectId(user1_id),
         room_id=PydanticObjectId(room_id),
-        content=message,
+        content=message_sent,
         room_type="private",
     )
     await messages_collection.insert_one(new_message.model_dump())

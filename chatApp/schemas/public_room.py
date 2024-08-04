@@ -26,7 +26,7 @@ class CreatePublicRoom(BaseModel):
     )
 
 
-class GetPulbicRoomsSchema(BaseModel):
+class GetPublicRoomSchema(BaseModel):
     id: PydanticObjectId = Field(
         ...,
         description="id of the room",
@@ -37,3 +37,4 @@ class GetPulbicRoomsSchema(BaseModel):
     name: str
     description: str | None = None
     created_at: datetime
+    members_count: int = Field(..., description="number of members")
