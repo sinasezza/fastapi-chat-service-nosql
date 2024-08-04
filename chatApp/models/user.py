@@ -14,7 +14,7 @@ class User(BaseModel):
     is_admin: bool = False
     created_at: datetime = Field(default_factory=lambda: datetime.now())
     updated_at: datetime = Field(default_factory=lambda: datetime.now())
-    last_login: datetime | None = None
+    last_login: datetime = Field(default_factory=lambda: datetime.now())
 
 
 class UserInDB(User):
