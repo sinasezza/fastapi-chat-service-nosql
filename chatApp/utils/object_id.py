@@ -6,8 +6,6 @@ from pydantic_core import core_schema
 
 
 class _ObjectIdPydanticAnnotation:
-    # Based on https://docs.pydantic.dev/latest/usage/types/custom/#handling-third-party-types.
-
     @classmethod
     def __get_pydantic_core_schema__(
         cls,
@@ -19,7 +17,6 @@ class _ObjectIdPydanticAnnotation:
 
         return core_schema.union_schema(
             [
-                # check if it's an instance first before doing any further work
                 core_schema.is_instance_schema(ObjectId),
                 core_schema.no_info_plain_validator_function(
                     validate_from_str

@@ -1,17 +1,14 @@
-from collections.abc import Mapping
 from datetime import datetime, timedelta
 from typing import Any
 
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
-from motor.motor_asyncio import AsyncIOMotorCollection
 from passlib.context import CryptContext
 
 from chatApp.config.config import get_settings
-from chatApp.config.database import get_users_collection
 from chatApp.config.logs import logger
-from chatApp.models.user import UserInDB
+from chatApp.models import user as user_model
 from chatApp.utils.exceptions import credentials_exception
 
 settings = get_settings()
@@ -130,7 +127,9 @@ def validate_token(token: str) -> bool:
         return False
 
 
-async def get_current_user(token: str = Depends(oauth2_scheme)) -> UserInDB:
+async def get_current_user(
+    token: str = Depends(oauth2_scheme),
+) -> user_model.UserInDB:
     """
     Retrieve the current user from the database using the provided JWT token.
 
@@ -146,12 +145,8 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> UserInDB:
         logger.error("Username is missing in the token payload.")
         raise credentials_exception
 
-    # Fetch the users_collection within the request scope
-    users_collection: AsyncIOMotorCollection = get_users_collection()
-
-    # Properly type the result of the find_one query
-    user: Mapping[str, Any] | None = await users_collection.find_one(
-        {"username": username}
+    user: user_model.UserInDB | None = await user_model.fetch_user_by_username(
+        username
     )
 
     # Raise an exception if no user was found
@@ -159,22 +154,18 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> UserInDB:
         logger.error(f"User with username {username} not found in database.")
         raise credentials_exception
 
-    # Construct and return a User instance from the found document
-    return UserInDB(**user)
+    return user
 
 
-async def authenticate_user(username: str, password: str) -> UserInDB | None:
-    # Fetch the users_collection within the request scope
-    users_collection: AsyncIOMotorCollection = get_users_collection()
-
-    # Properly type the result of the find_one query
-    user: Mapping[str, Any] | None = await users_collection.find_one(
-        {"username": username}
+async def authenticate_user(
+    username: str, password: str
+) -> user_model.UserInDB | None:
+    user: user_model.UserInDB | None = await user_model.fetch_user_by_username(
+        username
     )
 
     # Return None if no user was found or if password verification fails
-    if user is None or not verify_password(password, user["hashed_password"]):
+    if user is None or not verify_password(password, user.hashed_password):
         return None
 
-    # Construct and return a User instance from the found document
-    return UserInDB(**user)
+    return user
