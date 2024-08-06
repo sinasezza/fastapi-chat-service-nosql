@@ -2,49 +2,22 @@ from datetime import datetime, timedelta
 from typing import Any
 
 from fastapi import Depends
-from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 
 from chatApp.config.config import get_settings
 from chatApp.config.logs import logger
 from chatApp.models import user as user_model
+from chatApp.utils import hasher
 from chatApp.utils.exceptions import credentials_exception
 
 settings = get_settings()
 
-# Password hashing context
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-# OAuth2 scheme
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
 
 # JWT settings
 SECRET_KEY = settings.jwt_secret_key.get_secret_value()
 ALGORITHM = settings.jwt_algorithm
 ACCESS_TOKEN_EXPIRE_MINUTES = settings.access_token_expire_minutes
 REFRESH_TOKEN_EXPIRE_DAYS = settings.refresh_token_expire_days
-
-
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """
-    Verify if the provided password matches the stored hashed password.
-
-    :param plain_password: The plain text password.
-    :param hashed_password: The hashed password stored in the database.
-    :return: True if passwords match, otherwise False.
-    """
-    return pwd_context.verify(plain_password, hashed_password)
-
-
-def get_password_hash(password: str) -> str:
-    """
-    Hash the given password using the password hashing context.
-
-    :param password: The plain text password to hash.
-    :return: The hashed password.
-    """
-    return pwd_context.hash(password)
 
 
 def create_token(
@@ -128,7 +101,7 @@ def validate_token(token: str) -> bool:
 
 
 async def get_current_user(
-    token: str = Depends(oauth2_scheme),
+    token: str = Depends(hasher.oauth2_scheme),
 ) -> user_model.UserInDB:
     """
     Retrieve the current user from the database using the provided JWT token.
@@ -165,7 +138,9 @@ async def authenticate_user(
     )
 
     # Return None if no user was found or if password verification fails
-    if user is None or not verify_password(password, user.hashed_password):
+    if user is None or not hasher.verify_password(
+        password, user.hashed_password
+    ):
         return None
 
     return user

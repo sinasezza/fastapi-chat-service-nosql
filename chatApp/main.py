@@ -1,3 +1,6 @@
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,13 +16,22 @@ from chatApp.sockets import sio_app
 settings = get_settings()
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    # This function will be called on startup and shutdown
+    await init_mongo_db(test_db=settings.test_mode)
+    try:
+        yield
+    finally:
+        await shutdown_mongo_db()
+
+
 # Create a FastAPI app instance
 app = FastAPI(
     title="FastAPI Chat App",
     description="A chat application built with FastAPI and socket.io",
     version="1.0.0",
-    on_startup=[init_mongo_db],
-    on_shutdown=[shutdown_mongo_db],
+    lifespan=lifespan,
 )
 
 ### Add middlewares ###

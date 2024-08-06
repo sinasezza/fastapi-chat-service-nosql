@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     database_name: str = Field(default="chat_app")
     max_pool_size: int = 10
     min_pool_size: int = 1
+    test_database_url: str = Field(default="mongodb://localhost:27017")
+    test_database_name: str = Field(default="test_chat_app")
+    test_mode: bool = Field(default=False)
 
     # jwt settings
     jwt_secret_key: SecretStr = Field(default="your-secret-key")

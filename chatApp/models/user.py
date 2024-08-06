@@ -5,8 +5,8 @@ from typing import Any
 from motor.motor_asyncio import AsyncIOMotorCursor
 from pydantic import BaseModel, Field
 
-from chatApp.config import auth
 from chatApp.config.database import get_users_collection
+from chatApp.utils import hasher
 from chatApp.utils.object_id import PydanticObjectId
 
 
@@ -65,7 +65,7 @@ async def create_user(user_dict: dict[str, Any]) -> UserInDB:
     user_dict["created_at"] = datetime.now()
     user_dict["updated_at"] = datetime.now()
     user_dict["last_login"] = datetime.now()
-    user_dict["hashed_password"] = auth.get_password_hash(
+    user_dict["hashed_password"] = hasher.get_password_hash(
         user_dict["password"]
     )
 
