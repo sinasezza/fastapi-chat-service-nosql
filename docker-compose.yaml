@@ -1,0 +1,41 @@
+services:
+
+  fastapi-chat:
+    build: .
+    container_name: fastapi_chat
+    environment:
+      RUN_PORT: 8000
+    depends_on:
+      - mongodb-server
+    restart: unless-stopped
+    env_file:
+      - ./env/fast-api.env
+
+  mongodb-server:
+    image: mongodb/mongodb-community-server:latest
+    container_name: mongodb_server
+    restart: unless-stopped
+    env_file:
+      - ./env/mongodb.env
+    volumes:
+      - type: volume
+        source: mongodb_data_volume
+        target: /data/db
+    ports:
+      - '27117:27017'
+
+  nginx:
+    build: ./nginx
+    container_name: chat_nginx
+    restart: always
+    volumes:
+      # - ./nginx/configs/:/etc/nginx/conf.d
+      - ./uploads:/home/media
+    ports:
+      - 8000:80
+    depends_on:
+      - mongodb-server
+      - fastapi-chat
+
+volumes:
+  mongodb_data_volume:
