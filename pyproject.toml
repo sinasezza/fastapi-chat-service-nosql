@@ -21,7 +21,7 @@ fastapi = {extras = ["all"], version = "^0.111.1"}
 uvicorn = "^0.30.3"
 python-socketio = {extras = ["asyncio-client"], version = "^5.11.3"}
 pymongo = "^4.8.0"
-python-jose = {extras = ["cryptography"], version = "^3.3.0"}
+python-jose = {extras = ["cryptography"], version = "^3.4.0"}
 passlib = {extras = ["bcrypt"], version = "^1.7.4"}
 pre-commit = "^3.7.1"
 ruff = "^0.5.4"
